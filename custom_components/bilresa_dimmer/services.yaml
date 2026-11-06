@@ -1,0 +1,38 @@
+adjust_light:
+  target:
+    entity:
+      domain: light
+  fields:
+    attribute:
+      required: true
+      default: brightness
+      selector:
+        select:
+          translation_key: attribute
+          options:
+            - brightness
+            - color_temp
+    steps:
+      required: true
+      example: "{{ trigger.to_state.attributes.steps }}"
+      selector:
+        number:
+          min: -100
+          max: 100
+          mode: box
+    percent:
+      default: 5
+      selector:
+        number:
+          min: 0.1
+          max: 100
+          step: 0.1
+          unit_of_measurement: "%"
+    transition:
+      default: 0.3
+      selector:
+        number:
+          min: 0
+          max: 60
+          step: 0.1
+          unit_of_measurement: s

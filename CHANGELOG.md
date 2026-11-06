@@ -6,4 +6,5 @@ Format: [Keep a Changelog](https://keepachangelog.com/). Versions follow [semant
 
 ## [0.1.0]
 
-- First version: wheel clicks dim and brighten the lights of the current mode, the wheel press toggles them.
+- First version: three event entities for each dimmer (one per mode) with the wheel's clicks, and the `bilresa_dimmer.adjust_light` action that
+  dims or changes the colour temperature of lights by steps. What each mode controls is set in automations.
