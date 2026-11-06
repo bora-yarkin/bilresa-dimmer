@@ -23,7 +23,7 @@ class LightAdjuster:
         # (entity id, attribute) -> (the value last asked for, when). Brightness is a percentage, colour temperature kelvin.
         self._asked: dict[tuple[str, str], tuple[float, float]] = {}
 
-    async def adjust(self, entity_ids: Iterable[str], attribute: str, steps: int, percent: float, transition: float) -> None:
+    async def adjust(self, entity_ids: Iterable[str], attribute: str, steps: float, percent: float, transition: float) -> None:
         """Move each light by ``steps`` steps of ``percent`` percent of its range; positive is brighter / cooler."""
         for entity_id in entity_ids:
             state = self._hass.states.get(entity_id)

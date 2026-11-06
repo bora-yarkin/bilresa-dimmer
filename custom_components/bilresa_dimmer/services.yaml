@@ -20,6 +20,21 @@ adjust_light:
           min: -100
           max: 100
           mode: box
+    clicks:
+      example: "{{ trigger.to_state.attributes.clicks }}"
+      selector:
+        number:
+          min: -100
+          max: 100
+          mode: box
+    acceleration:
+      default: 100
+      selector:
+        number:
+          min: 0
+          max: 100
+          step: 1
+          unit_of_measurement: "%"
     percent:
       default: 5
       selector:

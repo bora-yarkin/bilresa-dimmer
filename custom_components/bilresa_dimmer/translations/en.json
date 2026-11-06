@@ -32,6 +32,14 @@
           "name": "Steps",
           "description": "How many steps, negative for dimmer or warmer. The dimmer's wheel events carry it: {{ trigger.to_state.attributes.steps }}."
         },
+        "clicks": {
+          "name": "Clicks",
+          "description": "The plain number of wheel clicks, without the speed-up of a long turn: {{ trigger.to_state.attributes.clicks }}. Needed only for the acceleration setting."
+        },
+        "acceleration": {
+          "name": "Acceleration",
+          "description": "How much of the speed-up of a long turn to use, from 0 % (every click moves the same) to 100 % (full speed-up). Works with the clicks."
+        },
         "percent": {
           "name": "Step size",
           "description": "How much one step moves, in percent of the light's range (brightness 0 to 100 %, or the light's colour temperature range)."

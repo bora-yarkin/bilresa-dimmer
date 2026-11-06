@@ -169,3 +169,11 @@ async def test_each_direction_counts_its_own_sequence(hass, entry, dimmer):
     await batch_ends(hass)
     # Clockwise 4 clicks (1+1+1+2) and counter-clockwise 2 clicks (a new turn: -1-1) cancel into a net.
     assert reported(hass, MODE_1) == ("clockwise", 5 - 2)
+
+
+async def test_wheel_events_carry_the_plain_clicks_next_to_the_steps(hass, entry, dimmer):
+    for _ in range(5):
+        send(hass, dimmer, 1, CCW)
+    await batch_ends(hass)
+    attributes = hass.states.get(MODE_1).attributes
+    assert (attributes["event_type"], attributes["steps"], attributes["clicks"]) == ("counter_clockwise", -(1 + 1 + 1 + 2 + 2), -5)

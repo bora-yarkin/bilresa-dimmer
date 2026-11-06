@@ -14,14 +14,14 @@ modes (the mode button switches between them), named after the dimmer: `event.<d
 
 | Event type | When | Attributes |
 |---|---|---|
-| `clockwise` | the wheel was turned clockwise | `steps`: positive, 1 or more |
-| `counter_clockwise` | the wheel was turned counter-clockwise | `steps`: negative |
+| `clockwise` | the wheel was turned clockwise | `steps` (positive), `clicks` (positive) |
+| `counter_clockwise` | the wheel was turned counter-clockwise | `steps` (negative), `clicks` (negative) |
 | `press` | the wheel was pressed | |
 | `double_press` | the wheel was double-pressed | |
 | `long_press` | the wheel was held | |
 
-- A wheel event is sent for every click at once. `steps` counts the clicks that arrived together (the dimmer's radio sends quick clicks in
-  a burst), and counts later clicks of a turn for more: the first three clicks of a turn are one step each, the next five two each, and
+- A wheel event is sent for every click at once. `clicks` is the number of clicks that arrived together (the dimmer's radio sends quick clicks in
+  a burst). `steps` is the same count with the speed-up of a long turn: later clicks of a turn count for more: the first three clicks of a turn are one step each, the next five two each, and
   after that three each. A pause of more than a second, or turning the other way, starts a new turn.
 - The mode button sends no message; the mode is known from which buttons fire.
 - Wheel presses follow Fast Matter switch's rule (the second touch of a double press is not a `press`).
@@ -34,7 +34,9 @@ Moves lights by a number of steps, with a fade.
 |---|---|
 | Target | the lights |
 | `attribute` | `brightness`, or `color_temp` (lights in colour temperature mode only) |
-| `steps` | how many steps, negative for dimmer or warmer |
+| `steps` | how many steps, negative for dimmer or warmer (the event's `steps`) |
+| `clicks` | the event's plain `clicks`; needed only for `acceleration` |
+| `acceleration` | how much of a long turn's speed-up to use, 0 to 100 % (default 100): 0 moves the same for every click, 100 uses all of the speed-up |
 | `percent` | the size of one step, in percent of the light's range (default 5) |
 | `transition` | the fade in seconds (default 0.3) |
 
@@ -65,6 +67,8 @@ actions:
             data:
               attribute: brightness
               steps: "{{ trigger.to_state.attributes.steps }}"
+              clicks: "{{ trigger.to_state.attributes.clicks }}"
+              acceleration: 50
               percent: 5
       - conditions: {condition: trigger, id: press}
         sequence:

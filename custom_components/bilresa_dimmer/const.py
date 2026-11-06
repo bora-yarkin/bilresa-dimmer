@@ -27,6 +27,8 @@ EVENT_TYPES = [EVENT_CLOCKWISE, EVENT_COUNTER_CLOCKWISE, EVENT_PRESS, EVENT_DOUB
 PRESS_EVENT_TYPES = (EVENT_PRESS, EVENT_DOUBLE_PRESS, EVENT_LONG_PRESS)
 
 ATTR_STEPS = "steps"
+ATTR_CLICKS = "clicks"
+ATTR_ACCELERATION = "acceleration"
 
 # The n-th click of a turn counts for this many steps: (up to this many clicks, steps); the last has no limit.
 MULTIPLIERS = ((3, 1), (8, 2), (None, 3))
@@ -48,5 +50,6 @@ ATTR_TRANSITION = "transition"
 BRIGHTNESS = "brightness"
 COLOR_TEMP = "color_temp"
 DEFAULT_PERCENT = 5.0
+DEFAULT_ACCELERATION = 100.0
 DEFAULT_TRANSITION_S = 0.3
 MIN_BRIGHTNESS_PCT = 1

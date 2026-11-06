@@ -137,3 +137,37 @@ async def test_values_outside_what_is_allowed_are_refused(hass, setup, bad):
     with pytest.raises(vol.Invalid):
         await adjust(hass, **{"steps": 1, **bad})
     assert setup == []
+
+
+@pytest.mark.parametrize(("acceleration", "expected"), [(0, 70), (50, 75), (100, 80)])
+async def test_acceleration_blends_between_the_plain_clicks_and_the_steps(hass, setup, acceleration, expected):
+    """4 clicks counted as 6 steps, at 5 % a step, from 50 %: no acceleration moves 20, full moves 30."""
+    light(hass, "on", brightness=128)
+    await adjust(hass, steps=6, clicks=4, acceleration=acceleration)
+    assert [c["brightness_pct"] for c in sent(setup)] == [expected]
+
+
+async def test_without_clicks_the_steps_are_used_as_they_are(hass, setup):
+    light(hass, "on", brightness=128)
+    await adjust(hass, steps=6, acceleration=0)
+    assert [c["brightness_pct"] for c in sent(setup)] == [80]
+
+
+async def test_acceleration_is_full_by_default(hass, setup):
+    light(hass, "on", brightness=128)
+    await adjust(hass, steps=6, clicks=4)
+    assert [c["brightness_pct"] for c in sent(setup)] == [80]
+
+
+async def test_acceleration_keeps_counter_clockwise_negative(hass, setup):
+    light(hass, "on", brightness=128)
+    await adjust(hass, steps=-6, clicks=-4, acceleration=50)
+    assert [c["brightness_pct"] for c in sent(setup)] == [25]
+
+
+@pytest.mark.parametrize("bad", [{"acceleration": -1}, {"acceleration": 101}, {"clicks": 1000}])
+async def test_acceleration_and_clicks_outside_what_is_allowed_are_refused(hass, setup, bad):
+    light(hass, "on", brightness=128)
+    with pytest.raises(vol.Invalid):
+        await adjust(hass, **{"steps": 1, **bad})
+    assert setup == []

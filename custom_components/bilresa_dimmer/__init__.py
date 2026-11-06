@@ -20,12 +20,15 @@ from homeassistant.helpers import service
 from homeassistant.helpers.typing import ConfigType
 
 from .const import (
+    ATTR_ACCELERATION,
     ATTR_ATTRIBUTE,
+    ATTR_CLICKS,
     ATTR_PERCENT,
     ATTR_STEPS,
     ATTR_TRANSITION,
     BRIGHTNESS,
     COLOR_TEMP,
+    DEFAULT_ACCELERATION,
     DEFAULT_PERCENT,
     DEFAULT_TRANSITION_S,
     DOMAIN,
@@ -43,6 +46,8 @@ ADJUST_LIGHT_SCHEMA = vol.Schema(
         **cv.TARGET_SERVICE_FIELDS,
         vol.Required(ATTR_ATTRIBUTE): vol.In([BRIGHTNESS, COLOR_TEMP]),
         vol.Required(ATTR_STEPS): vol.All(vol.Coerce(int), vol.Range(min=-100, max=100)),
+        vol.Optional(ATTR_CLICKS): vol.All(vol.Coerce(int), vol.Range(min=-100, max=100)),
+        vol.Optional(ATTR_ACCELERATION, default=DEFAULT_ACCELERATION): vol.All(vol.Coerce(float), vol.Range(min=0, max=100)),
         vol.Optional(ATTR_PERCENT, default=DEFAULT_PERCENT): vol.All(vol.Coerce(float), vol.Range(min=0.1, max=100)),
         vol.Optional(ATTR_TRANSITION, default=DEFAULT_TRANSITION_S): vol.All(vol.Coerce(float), vol.Range(min=0, max=60)),
     }
@@ -55,7 +60,11 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     async def adjust_light(call: ServiceCall) -> None:
         # A device or area target also names its other entities; only the lights are moved.
         lights = sorted(e for e in await service.async_extract_entity_ids(call) if e.startswith("light."))
-        await adjuster.adjust(lights, call.data[ATTR_ATTRIBUTE], call.data[ATTR_STEPS], call.data[ATTR_PERCENT], call.data[ATTR_TRANSITION])
+        steps = call.data[ATTR_STEPS]
+        if (clicks := call.data.get(ATTR_CLICKS)) is not None:
+            # 0 % acceleration moves by the plain clicks, 100 % by the steps with the speed-up of a long turn.
+            steps = clicks + (steps - clicks) * call.data[ATTR_ACCELERATION] / 100
+        await adjuster.adjust(lights, call.data[ATTR_ATTRIBUTE], steps, call.data[ATTR_PERCENT], call.data[ATTR_TRANSITION])
 
     hass.services.async_register(DOMAIN, SERVICE_ADJUST_LIGHT, adjust_light, schema=ADJUST_LIGHT_SCHEMA)
     return True
