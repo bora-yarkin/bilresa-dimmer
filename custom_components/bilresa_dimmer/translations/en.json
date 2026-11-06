@@ -1,0 +1,38 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "IKEA BILRESA dimmer",
+        "description": "Choose the dimmer (the Matter device with nine buttons).",
+        "data": { "device_id": "Dimmer" }
+      },
+      "lights": {
+        "title": "Lights of each mode",
+        "description": "Turning the wheel dims or brightens these lights and pressing it switches them on or off. The mode button switches between the three modes. A mode with no lights does nothing.",
+        "data": {
+          "mode_1_lights": "Mode 1 lights",
+          "mode_2_lights": "Mode 2 lights",
+          "mode_3_lights": "Mode 3 lights"
+        }
+      }
+    },
+    "error": { "not_a_dimmer": "This device does not have the nine buttons of a BILRESA dimmer." },
+    "abort": {
+      "already_configured": "This dimmer is already set up.",
+      "no_fast_matter_switch": "Set up Fast Matter switch first."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Lights of each mode",
+        "description": "Turning the wheel dims or brightens these lights and pressing it switches them on or off. A mode with no lights does nothing.",
+        "data": {
+          "mode_1_lights": "Mode 1 lights",
+          "mode_2_lights": "Mode 2 lights",
+          "mode_3_lights": "Mode 3 lights"
+        }
+      }
+    }
+  }
+}
