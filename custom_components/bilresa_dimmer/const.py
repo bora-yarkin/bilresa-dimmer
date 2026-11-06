@@ -32,6 +32,11 @@ ATTR_STEPS = "steps"
 MULTIPLIERS = ((3, 1), (8, 2), (None, 3))
 # A pause this long ends a turn; the next click starts again with the smallest step.
 TURN_GAP_S = 1.0
+# The dimmer counts the clicks of a turn as one multi-press sequence. If the sequence's closing event never comes, the count is dropped
+# after this long without an event of that wheel direction.
+SEQUENCE_TIMEOUT_S = 2.0
+# More new clicks than this in one event is not believable (the dimmer was seen to count 18 per sequence).
+MAX_CLICKS_PER_EVENT = 100
 # The dimmer's radio sends quick clicks together; clicks that arrive within this time are reported as one event.
 BATCH_S = 0.05
 

@@ -5,7 +5,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 
-from .const import MULTIPLIERS, TURN_GAP_S
+from .const import MAX_CLICKS_PER_EVENT, MULTIPLIERS, SEQUENCE_TIMEOUT_S, TURN_GAP_S
 
 
 def multiplier(clicks_in_turn: int) -> int:
@@ -38,3 +38,42 @@ class Turn:
         self._last = now
         self._clicks += 1
         return direction * multiplier(self._clicks)
+
+
+class ClickCounter:
+    """Counts the wheel clicks of one direction from the dimmer's multi-press events.
+
+    A fast turn is not reported click by click. The dimmer sends an ``initial_press`` only every half second or so, and the real
+    number of clicks so far is in the ``presses`` count of the ``multi_press_ongoing`` events that follow (8, then 14, then 18, say);
+    the closing ``multi_press_complete`` repeats the total. A slow turn does send one ``initial_press`` per click. So an
+    ``initial_press`` counts as one click at once, and a count tops the clicks up to the dimmer's own total. The total is for one
+    sequence; ``multi_press_complete`` ends it.
+    """
+
+    def __init__(self, clock: Callable[[], float]) -> None:
+        self._clock = clock
+        self._counted = 0
+        self._last = float("-inf")
+
+    def _touch(self) -> None:
+        now = self._clock()
+        if now - self._last > SEQUENCE_TIMEOUT_S:  # the closing event never came
+            self._counted = 0
+        self._last = now
+
+    def initial_press(self) -> int:
+        """The new clicks since the last event: one."""
+        self._touch()
+        self._counted += 1
+        return 1
+
+    def total(self, presses: int | None, *, complete: bool) -> int:
+        """The new clicks when the dimmer says ``presses`` clicks were made in this sequence (None when it did not say)."""
+        self._touch()
+        new = 0
+        if presses is not None and presses > self._counted:
+            new = min(presses - self._counted, MAX_CLICKS_PER_EVENT)
+            self._counted = presses
+        if complete:
+            self._counted = 0
+        return new

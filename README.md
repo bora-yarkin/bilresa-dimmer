@@ -88,5 +88,11 @@ integration, IKEA BILRESA dimmer** and confirm. There is nothing to configure.
 ## How the buttons are laid out
 
 The nine Matter buttons are, for each mode in order, wheel clockwise, wheel counter-clockwise and wheel press: buttons 1 to 3 for mode 1,
-4 to 6 for mode 2, 7 to 9 for mode 3. The dimmer sends one `initial_press` per wheel click, at once; its own click count comes later and
-is often wrong, so it is not used.
+4 to 6 for mode 2, 7 to 9 for mode 3.
+
+## How the wheel is counted
+
+A slow turn sends an `initial_press` for each click. A fast turn does not: the dimmer sends one about every half second and counts the
+clicks as a multi-press sequence, so the real number is in the `presses` count of the `multi_press_ongoing` events that follow (for
+example 8, then 14, then 18) and again in the closing `multi_press_complete`. The integration counts an `initial_press` as a click at once
+and tops the clicks up to the dimmer's own count, so a slow turn reacts instantly and a fast turn catches up a tenth of a second later.

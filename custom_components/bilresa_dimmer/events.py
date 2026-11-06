@@ -1,8 +1,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 """Turns Fast Matter switch's events for a dimmer into what each mode's event entity reports.
 
-The wheel's clicks arrive as ``initial_press`` of the clockwise or counter-clockwise button (the dimmer's own click count, which
-comes later and is often wrong, is not used). The steps of the clicks that arrive within ``BATCH_S`` are added up and reported as
+The wheel's clicks arrive as multi-press events of the clockwise or counter-clockwise button, counted by ``ClickCounter``. The steps of the clicks that arrive within ``BATCH_S`` are added up and reported as
 one event; the wheel press is passed on as ``press``, ``double_press`` or ``long_press`` by the rule Fast Matter switch applies.
 """
 
@@ -24,7 +23,7 @@ from .const import (
     PRESS,
     PRESS_EVENT_TYPES,
 )
-from .dimming import Turn
+from .dimming import ClickCounter, Turn
 
 
 def dispatch_signal(device_id: str, mode: int) -> str:
@@ -38,6 +37,7 @@ class DimmerEvents:
     def __init__(self, hass: HomeAssistant) -> None:
         self._hass = hass
         self._turns: dict[tuple[str, int], Turn] = {}
+        self._counters: dict[tuple[str, int], ClickCounter] = {}
         # The steps clicks have added up to and no event has reported yet.
         self._pending: dict[tuple[str, int], int] = {}
         self._cancel_flush: CALLBACK_TYPE | None = None
@@ -56,11 +56,26 @@ class DimmerEvents:
         if button == PRESS:
             if data.get("fast_event_type") in PRESS_EVENT_TYPES:
                 async_dispatcher_send(self._hass, dispatch_signal(*key), data["fast_event_type"], {})
-        elif data.get("event_type") == "initial_press":
-            turn = self._turns.setdefault(key, Turn(self._hass.loop.time))
-            self._pending[key] = self._pending.get(key, 0) + turn.click(1 if button == CLOCKWISE else -1)
-            if self._cancel_flush is None:
-                self._cancel_flush = async_call_later(self._hass, BATCH_S, self._flush)
+        else:
+            clicks = self._clicks(key[0], endpoint, data)
+            if clicks:
+                turn = self._turns.setdefault(key, Turn(self._hass.loop.time))
+                direction = 1 if button == CLOCKWISE else -1
+                self._pending[key] = self._pending.get(key, 0) + sum(turn.click(direction) for _ in range(clicks))
+                if self._cancel_flush is None:
+                    self._cancel_flush = async_call_later(self._hass, BATCH_S, self._flush)
+
+    def _clicks(self, device_id: str, endpoint: int, data: dict) -> int:
+        """The new wheel clicks this event adds (see ClickCounter)."""
+        counter = self._counters.setdefault((device_id, endpoint), ClickCounter(self._hass.loop.time))
+        event_type = data.get("event_type")
+        if event_type == "initial_press":
+            return counter.initial_press()
+        if event_type in ("multi_press_ongoing", "multi_press_complete"):
+            presses = data.get("presses")
+            valid = isinstance(presses, int) and not isinstance(presses, bool) and presses > 0
+            return counter.total(presses if valid else None, complete=event_type == "multi_press_complete")
+        return 0
 
     @callback
     def _flush(self, _now) -> None:

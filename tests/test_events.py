@@ -138,3 +138,34 @@ async def test_unloading_drops_clicks_not_yet_reported_and_stops_listening(hass,
     send(hass, dimmer, 1, CW)
     await batch_ends(hass)
     assert hass.states.get(MODE_1).state == "unavailable"
+
+
+async def test_a_fast_turn_reports_the_clicks_the_dimmer_counted(hass, entry, dimmer):
+    """The first sequence of the owner's capture: four initial presses, 18 clicks; the steps are those of 18 clicks in one turn."""
+    sequence = [
+        ("initial_press", None),
+        ("initial_press", None),
+        ("multi_press_ongoing", 8),
+        ("initial_press", None),
+        ("multi_press_ongoing", 14),
+    ]
+    sequence += [("initial_press", None), ("multi_press_ongoing", 18), ("multi_press_complete", 18)]
+    for event_type, presses in sequence:
+        send(hass, dimmer, 1, CW, event_type, **({"presses": presses} if presses else {}))
+    await batch_ends(hass)
+    assert reported(hass, MODE_1) == ("clockwise", 3 * 1 + 5 * 2 + 10 * 3)
+
+
+async def test_a_count_without_a_number_adds_nothing(hass, entry, dimmer):
+    for bad in (None, 0, -2, "5", True):
+        send(hass, dimmer, 1, CW, "multi_press_ongoing", **({} if bad is None else {"presses": bad}))
+    await batch_ends(hass)
+    assert hass.states.get(MODE_1).state == "unknown"
+
+
+async def test_each_direction_counts_its_own_sequence(hass, entry, dimmer):
+    send(hass, dimmer, 1, CW, "multi_press_ongoing", presses=4)
+    send(hass, dimmer, 1, CCW, "multi_press_ongoing", presses=2)
+    await batch_ends(hass)
+    # Clockwise 4 clicks (1+1+1+2) and counter-clockwise 2 clicks (a new turn: -1-1) cancel into a net.
+    assert reported(hass, MODE_1) == ("clockwise", 5 - 2)
